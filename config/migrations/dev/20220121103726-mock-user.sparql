@@ -1,0 +1,24 @@
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX users: <http://nove.eu/users/>
+PREFIX accounts: <http://nove.eu/accounts/>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX mu:      <http://mu.semte.ch/vocabularies/core/>
+PREFIX account: <http://mu.semte.ch/vocabularies/account/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+INSERT DATA {
+  GRAPH <http://mu.semte.ch/graphs/users> {
+    users:d86d0911-f492-415e-8d19-c11d896840e5 a foaf:Person ;
+                  foaf:name "restricted mock user";
+                  foaf:account accounts:48e6da58-c409-4faf-9f05-a6d1d15c276e;
+                  mu:uuid "d86d0911-f492-415e-8d19-c11d896840e5";
+                  dcterms:created "2021-10-08T10:40:00Z"^^xsd:datetime;
+                  dcterms:modified "2021-10-08T10:40:00Z"^^xsd:datetime.
+    accounts:48e6da58-c409-4faf-9f05-a6d1d15c276e a foaf:OnlineAccount;
+                                                  account:email "restricted@email.com";
+                                                  mu:uuid "48e6da58-c409-4faf-9f05-a6d1d15c276e";
+                                                  account:password "$2a$12$D.x6SlsHFdSJVmI7O9d.iePpZmCOtWkLkrWWO8lIshknUkaR0V1Hq";
+                                                  account:status <http://mu.semte.ch/vocabularies/account/status/active>;
+                                                  dcterms:created "2021-10-08T10:40:00Z"^^xsd:datetime;
+                                                  dcterms:modified "2021-10-08T10:40:00Z"^^xsd:datetime.
+}}

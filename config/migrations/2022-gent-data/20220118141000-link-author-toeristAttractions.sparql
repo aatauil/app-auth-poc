@@ -1,0 +1,21 @@
+PREFIX schema: <http://schema.org/> 
+PREFIX foaf: <http://xlmns.com/foaf/0.1/>
+PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+
+INSERT DATA {
+  GRAPH <http://mu.semte.ch/graphs/restricted> {
+    <http://stad.gent/id/auteur/dcdd73ee-0f56-4a8b-8752-bc6f14097a18> a schema:author ;
+    mu:uuid """dcdd73ee-0f56-4a8b-8752-bc6f14097a18""" ;
+    foaf:name """Maarten""" .
+  }
+}
+
+INSERT {
+  GRAPH <http://mu.semte.ch/graphs/restricted> {
+    ?s schema:hasAuthor <http://stad.gent/id/auteur/dcdd73ee-0f56-4a8b-8752-bc6f14097a18> .
+  }
+} WHERE {
+  GRAPH <http://mu.semte.ch/graphs/public> {
+    ?s a schema:TouristAttraction .
+  }
+}

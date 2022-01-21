@@ -19,27 +19,16 @@ services:
       - "logging=true"
   identifier:
     image: semtech/mu-identifier:1.9.0
-    environment:
-      DEFAULT_MU_AUTH_ALLOWED_GROUPS_HEADER: "[{\"variables\":[],\"name\":\"public\"}, {\"variables\":[],\"name\":\"clean\"}]"
-      DEFAULT_ACCESS_CONTROL_ALLOW_ORIGIN_HEADER: "*"
     labels:
       - "logging=true"
     restart: always
     logging: *default-logging
   dispatcher:
     image: semtech/mu-dispatcher:2.1.0-beta.1
+    environment:
+      DEFAULT_MU_AUTH_ALLOWED_GROUPS_HEADER: "[{\"variables\":[],\"name\":\"public\"}, {\"variables\":[],\"name\":\"clean\"}]"
     volumes:
       - ./config/dispatcher:/config
-    labels:
-      - "logging=true"
-    restart: always
-    logging: *default-logging
-  frontend:
-    image: lblod/frontend-centrale-vindplaats:0.2.0.fastboot
-    environment:
-      EMBER_METIS_BASE_URL: "http://data.lblod.info/"
-    links:
-      - identifier:backend
     labels:
       - "logging=true"
     restart: always
@@ -48,6 +37,7 @@ services:
     image: cecemel/mu-authorization:0.6.0-beta.8
     environment:
       MU_SPARQL_ENDPOINT: "http://virtuoso:8890/sparql"
+      LOG_OUTGOING_SPARQL_QUERY_ROUNDTRIP: "true"
     volumes:
       - ./config/authorization:/config
     labels:
@@ -89,13 +79,26 @@ services:
     volumes:
       - ./data/db:/data
       - ./config/virtuoso/virtuoso.ini:/data/virtuoso.ini # Note: on production override this setting
-      - ./config/virtuoso/:/opt/virtuoso-scripts
     labels:
       - "logging=true"
     restart: always
     logging: *default-logging
   uri-info:
     image: redpencil/mu-uri-info-service:0.2.1
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
+  login:
+    image: aatauil/mu-node-authentication-service:0.0.2
+    environment:
+      NODE_ENV: "development"
+      ACCOUNTS_GRAPH: "http://mu.semte.ch/graphs/users"
+      SESSIONS_GRAPH: "http://mu.semte.ch/graphs/sessions"
+    volumes:
+      - /media/achraf/Main/projects/mu-semtech/mu-node-authentication-service/:/app/
+    links:
+      - virtuoso:db
     labels:
       - "logging=true"
     restart: always
@@ -107,104 +110,4 @@ services:
     labels:
       - "logging=true"
     restart: always
-    logging: *default-logging
-  import-leidinggevenden:
-    image: lblod/mandaten-import-service:0.4.3
-    links:
-      - virtuoso:database
-    volumes:
-      - ./config/import/queries/leidinggevenden:/data/queries
-    environment:
-      CRON_PATTERN: "0 0 * * *"
-      DEFAULT_GRAPH: "http://mu.semte.ch/graphs/temp-ingest-graph-leidinggevenden"
-    labels:
-      - "logging=true"
-    restart: always
-    logging: *default-logging
-  import-mandaten:
-    image: lblod/mandaten-import-service:0.4.3
-    links:
-      - virtuoso:database
-    volumes:
-      - ./config/import/queries/mandaten:/data/queries
-    environment:
-      CRON_PATTERN: "0 23 * * *"
-      DEFAULT_GRAPH: "http://mu.semte.ch/graphs/temp-ingest-graph-mandaten"
-    labels:
-      - "logging=true"
-    restart: always
-    logging: *default-logging
-################################################################################
-# DELTAS
-################################################################################
-  deliver-email-service:
-    image: redpencil/deliver-email-service:0.2.0
-    environment:
-      MAILBOX_URI: 'http://data.lblod.info/id/mailboxes/1'
-    labels:
-      - "logging=true"
-    logging: *default-logging
-    restart: always
-  delta-report-generator:
-    image: lblod/delta-producer-report-generator:0.3.0
-    environment:
-      OUTBOX: "http://data.lblod.info/id/mail-folders/2"
-    volumes:
-      - ./config/delta-consumer/report-generator:/config
-  mandatendatabank-consumer:
-      image: lblod/delta-consumer-single-graph-maintainer:0.4.1
-      environment:
-        SYNC_BASE_URL: 'https://loket.lblod.info/'
-        SERVICE_NAME: 'mandatendatabank-consumer'
-        SYNC_FILES_PATH: '/sync/mandatarissen/files'
-        SYNC_DATASET_SUBJECT: "http://data.lblod.info/datasets/delta-producer/dumps/MandatarissenCacheGraphDump"
-        INITIAL_SYNC_JOB_OPERATION: "http://redpencil.data.gift/id/jobs/concept/JobOperation/deltas/consumer/initialSync/mandatarissen"
-        JOB_CREATOR_URI: "http://data.lblod.info/services/id/mandatendatabank-consumer"
-        DISABLE_INITIAL_SYNC: 'true'
-        BYPASS_MU_AUTH_FOR_EXPENSIVE_QUERIES: 'true'
-        KEEP_DELTA_FILES: 'true'
-        DELTA_FILE_FOLDER: '/consumer-files'
-      volumes:
-        - ./data/files/consumer-files/mandaten:/consumer-files/
-      restart: always
-      labels:
-        - "logging=true"
-      logging: *default-logging
-  leidinggevenden-consumer:
-    image: lblod/delta-consumer-single-graph-maintainer:0.4.1
-    environment:
-      SYNC_BASE_URL: 'https://loket.lblod.info' # replace with link to Loket API
-      SERVICE_NAME: 'leidinggevenden-consumer'
-      SYNC_FILES_PATH: '/sync/leidinggevenden/files'
-      SYNC_DATASET_SUBJECT: "http://data.lblod.info/datasets/delta-producer/dumps/LeidinggevendenCacheGraphDump"
-      INITIAL_SYNC_JOB_OPERATION: "http://redpencil.data.gift/id/jobs/concept/JobOperation/deltas/consumer/initialSync/leidinggevenden"
-      JOB_CREATOR_URI: "http://data.lblod.info/services/id/leidinggevenden-consumer"
-      DISABLE_INITIAL_SYNC: 'true'
-      BYPASS_MU_AUTH_FOR_EXPENSIVE_QUERIES: 'true'
-      KEEP_DELTA_FILES: 'true'
-      DELTA_FILE_FOLDER: '/consumer-files'
-    volumes:
-      - ./data/files/consumer-files/leidinggevenden:/consumer-files/
-    restart: always
-    labels:
-      - "logging=true"
-  besluiten-consumer:
-    image: lblod/delta-consumer-single-graph-maintainer:0.4.1
-    environment:
-      SYNC_BASE_URL: 'https://dev.harvesting-self-service.lblod.info' # replace with link to Loket API
-      SERVICE_NAME: 'besluiten-consumer'
-      SYNC_FILES_PATH: '/sync/besluiten/files'
-      SYNC_DATASET_SUBJECT: "http://data.lblod.info/datasets/delta-producer/dumps/lblod-harvester/BesluitenCacheGraphDump"
-      INITIAL_SYNC_JOB_OPERATION: "http://redpencil.data.gift/id/jobs/concept/JobOperation/deltas/consumer/initialSync/besluiten"
-      JOB_CREATOR_URI: "http://data.lblod.info/services/id/besluiten-consumer"
-      DISABLE_INITIAL_SYNC: 'true'
-      BYPASS_MU_AUTH_FOR_EXPENSIVE_QUERIES: 'true'
-      KEEP_DELTA_FILES: 'true'
-      DELTA_FILE_FOLDER: '/consumer-files'
-      BATCH_SIZE: 100 # if virtuoso is in prod mode, you can safely beef this up to 500/1000
-    volumes:
-      - ./data/files/consumer-files/besluiten:/consumer-files/
-    restart: always
-    labels:
-      - "logging=true"
     logging: *default-logging

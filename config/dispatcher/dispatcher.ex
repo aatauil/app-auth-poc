@@ -48,6 +48,10 @@ defmodule Dispatcher do
   ###############
   # API SERVICES
   ###############
+  match "/sessions/*path", %{ layer: :api_services, accept: %{ json: true } } do
+    Proxy.forward conn, path, "http://login/sessions/"
+  end
+
   match "/resource-labels/*path", %{ layer: :api_services, accept: %{ json: true } } do
     forward conn, path, "http://resource-labels/"
   end

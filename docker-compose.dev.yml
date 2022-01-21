@@ -11,8 +11,6 @@ services:
       - "80:80"
   dispatcher:
     restart: "no"
-  frontend:
-    restart: "no"
   migrations:
     restart: "no"
   database:
@@ -25,15 +23,3 @@ services:
     restart: "no"
     ports:
       - "8890:8890"
-  deltanotifier:
-    restart: "no"
-  deliver-email-service:
-    restart: "no"
-  delta-report-generator:
-    restart: "no"
-  mandatendatabank-consumer:
-    restart: "no"
-  leidinggevenden-consumer:
-    restart: "no"
-  besluiten-consumer:
-    restart: "no"
