@@ -33,6 +33,16 @@ services:
       - "logging=true"
     restart: always
     logging: *default-logging
+  frontend:
+    image: aatauil/frontend-auth-poc:0.0.1-fastboot
+    environment:
+      EMBER_METIS_BASE_URL: "http://data.lblod.info/"
+    links:
+      - identifier:backend
+    labels:
+      - "logging=true"
+    restart: always
+    logging: *default-logging
   database:
     image: cecemel/mu-authorization:0.6.0-beta.8
     environment:
@@ -90,13 +100,11 @@ services:
     restart: always
     logging: *default-logging
   login:
-    image: aatauil/mu-node-authentication-service:0.0.2
+    image: aatauil/mu-node-authentication-service:0.0.3
     environment:
       NODE_ENV: "development"
       ACCOUNTS_GRAPH: "http://mu.semte.ch/graphs/users"
       SESSIONS_GRAPH: "http://mu.semte.ch/graphs/sessions"
-    volumes:
-      - /media/achraf/Main/projects/mu-semtech/mu-node-authentication-service/:/app/
     links:
       - virtuoso:db
     labels:
